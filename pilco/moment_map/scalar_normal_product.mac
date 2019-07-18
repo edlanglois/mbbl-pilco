@@ -1,0 +1,60 @@
+/* Note: This is a Maxima file.
+ * Run with `maxima -b <file>`
+ */
+
+/* Distribution of the scalar product of two Normal random variables.
+ *
+ * X ~ Normal(m_x, s_x^2)
+ * Y ~ Normal(m_y, s_y^2)
+ * Cov(X, Y) = c_xy
+ */
+
+/* Gaussian Non-Central Moments */
+e2(m, s) := m^2 + s^2;
+e3(m, s) := m^3 + 3*m*s^2;
+e4(m, s) := m^4 + 6*m^2*s^2 + 3*s^4;
+
+/* Define
+ *
+ * Z = Y - aX, where a = Cov(X, Y) / Var(X)
+ *
+ * Cov(X, Z) = Cov(X, Y) - aCov(X, X) = Cov(X, Y) - Cov(X, Y) = 0
+ *
+ * Both are Normal so X and Z are independent.
+ */
+a: c_xy / s_x^2;
+
+/* Statistics of Z:
+ *
+ * E[Z] = E[Y] - aE[Z]
+ * Var(Z) = Var(Y) + a^2 * Var(X) - 2 * a * Cov(X, Y)
+ */
+m_z: m_y - a * m_x;
+s_z: sqrt(s_y^2 + a^2 * s_x^2 - 2 * a * c_xy);
+
+/* E[XY] = E[XZ + aX^2] = E[X]E[Z] + aE[X^2] */
+e_xy: ratsimp(expand(m_x * m_z + a * e2(m_x, s_x)));
+print(e_xy);
+
+
+/* E[X^2 Y^2]
+ *   = E[X^2 (Z + aX)^2]
+ *   = E[X^2 Z^2 + 2a X^3 Z + a^2 X^4]
+ *   = E[X^2]E[Z^2] + 2aE[X^3]E[Z] + a^2 E[X^4]
+ */
+e_x2y2: e2(m_x, s_x) * e2(m_z, s_z)
+	+ 2 * a * e3(m_x, s_x) * m_z
+	+ a^2 * e4(m_x, s_x);
+
+var_xy: e_x2y2 - e_xy^2;
+print(expand(var_xy));
+print(ratsimp(expand(var_xy)));
+
+/* Manually simplified version.
+ * Subtract from var_xy and check that difference is 0.
+ */
+e_x2: e2(m_x, s_x);
+e_y2: e2(m_y, s_y);
+var_xy_simp: e_x2 * e_y2 + e_xy^2 - 2*m_x^2*m_y^2;
+
+ratsimp(var_xy_simp - var_xy);
